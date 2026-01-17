@@ -1,10 +1,14 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # loads .env file into environment
+
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
-import numpy as np
-import cv2
 
 from backend.services.model_router import ModelRouter
+from backend.services.gemini_service import GeminiService
 
 # --------------------------------------------------
 # App initialization
@@ -15,8 +19,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Lazy-loaded model router (CRITICAL FIX)
 model_router = None
+gemini_service = None
 
 # --------------------------------------------------
 # CORS
@@ -41,7 +45,7 @@ def health_check():
     }
 
 # --------------------------------------------------
-# Analyze Endpoint (CORE)
+# Analyze Endpoint
 # --------------------------------------------------
 @app.post("/analyze")
 async def analyze_xray(
@@ -51,16 +55,13 @@ async def analyze_xray(
     body_part: str = Form(...),
     xray_image: UploadFile = File(...)
 ):
-    """
-    AI Orchestrator:
-    - Lazy-load models
-    - Run CNN inference
-    - (Grad-CAM temporarily disabled)
-    """
+    global model_router, gemini_service
 
-    global model_router
     if model_router is None:
-        model_router = ModelRouter()  # ✅ SAFE lazy init
+        model_router = ModelRouter()
+
+    if gemini_service is None:
+        gemini_service = GeminiService()
 
     if body_part.lower() not in ["chest", "limb", "spine"]:
         raise HTTPException(status_code=400, detail="Invalid body_part")
@@ -72,13 +73,20 @@ async def analyze_xray(
     image_bytes = await xray_image.read()
 
     # ---------------------------
-    # Model Inference ONLY
+    # CNN inference
     # ---------------------------
     result = model_router.run_inference(body_part, image_bytes)
 
     # ---------------------------
-    # Response (Grad-CAM OFF for now)
+    # Gemini explanation
     # ---------------------------
+    explanation = gemini_service.generate_explanation(
+        predicted_class=result["predicted_class"],
+        confidence=result["confidence"],
+        symptoms=symptoms,
+        body_part=body_part
+    )
+
     return {
         "request_id": request_id,
         "patient": {
@@ -90,6 +98,7 @@ async def analyze_xray(
         "analysis": {
             "predicted_class": result["predicted_class"],
             "confidence": round(result["confidence"], 4),
+            "explanation": explanation,
             "gradcam_available": False
         },
         "disclaimer": "AI-assisted analysis only. Not a medical diagnosis."
