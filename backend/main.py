@@ -1,29 +1,37 @@
-# Main application file
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
 import uuid
-import os
+import numpy as np
+import cv2
 
+from backend.services.model_router import ModelRouter
+
+# --------------------------------------------------
 # App initialization
+# --------------------------------------------------
 app = FastAPI(
     title="MedVision AI Backend",
     description="AI-assisted X-ray analysis system (Not for diagnosis)",
     version="1.0.0"
 )
 
-# CORS (Frontend will be on Vercel)
+# Lazy-loaded model router (CRITICAL FIX)
+model_router = None
+
+# --------------------------------------------------
+# CORS
+# --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten later if needed
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -------------------------
+# --------------------------------------------------
 # Health Check
-# -------------------------
+# --------------------------------------------------
 @app.get("/")
 def health_check():
     return {
@@ -32,56 +40,57 @@ def health_check():
         "disclaimer": "AI-assisted analysis only. Not a medical diagnosis."
     }
 
-# -------------------------
+# --------------------------------------------------
 # Analyze Endpoint (CORE)
-# -------------------------
+# --------------------------------------------------
 @app.post("/analyze")
 async def analyze_xray(
     name: str = Form(...),
     age: int = Form(...),
     symptoms: str = Form(...),
-    body_part: str = Form(...),  # chest | limb | spine
+    body_part: str = Form(...),
     xray_image: UploadFile = File(...)
 ):
     """
-    Main AI Orchestrator endpoint.
-    - Receives patient metadata
-    - Receives X-ray image
-    - Routes to correct AI pipeline
+    AI Orchestrator:
+    - Lazy-load models
+    - Run CNN inference
+    - (Grad-CAM temporarily disabled)
     """
 
-    # Basic validation
+    global model_router
+    if model_router is None:
+        model_router = ModelRouter()  # ✅ SAFE lazy init
+
     if body_part.lower() not in ["chest", "limb", "spine"]:
-        raise HTTPException(status_code=400, detail="Invalid body_part selection")
+        raise HTTPException(status_code=400, detail="Invalid body_part")
 
     if xray_image.content_type not in ["image/png", "image/jpeg"]:
-        raise HTTPException(status_code=400, detail="Only PNG or JPEG images are supported")
+        raise HTTPException(status_code=400, detail="Unsupported image type")
 
-    # Generate request ID (used across services)
     request_id = str(uuid.uuid4())
+    image_bytes = await xray_image.read()
 
-    try:
-        # NOTE: Actual AI logic will be plugged in later
-        # For now this is a controlled placeholder
+    # ---------------------------
+    # Model Inference ONLY
+    # ---------------------------
+    result = model_router.run_inference(body_part, image_bytes)
 
-        response = {
-            "request_id": request_id,
-            "patient": {
-                "name": name,
-                "age": age,
-                "symptoms": symptoms,
-                "body_part": body_part
-            },
-            "analysis": {
-                "prediction": "pending",
-                "confidence": None,
-                "gradcam_url": None,
-                "clinical_explanation": None
-            },
-            "disclaimer": "This result is AI-assisted and not a medical diagnosis."
-        }
-
-        return response
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # ---------------------------
+    # Response (Grad-CAM OFF for now)
+    # ---------------------------
+    return {
+        "request_id": request_id,
+        "patient": {
+            "name": name,
+            "age": age,
+            "symptoms": symptoms,
+            "body_part": body_part
+        },
+        "analysis": {
+            "predicted_class": result["predicted_class"],
+            "confidence": round(result["confidence"], 4),
+            "gradcam_available": False
+        },
+        "disclaimer": "AI-assisted analysis only. Not a medical diagnosis."
+    }
