@@ -1,8 +1,8 @@
 export default function Disclaimer() {
   return (
     <p className="text-xs text-red-400 text-center">
-      ⚠️ AI-assisted system for demo and educational purposes only.
-      Not intended for medical diagnosis.
+      ⚠️ This system is designed to assist, not to replace medical professionals.<br></br>
+      Consulting a qualified doctor for diagnosis and treatment is always recommended.
     </p>
   );
 }
