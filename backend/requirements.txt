@@ -1,0 +1,26 @@
+# Backend dependencies
+# Core API
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# Deep Learning
+torch>=2.1.0
+torchvision>=0.16.0
+numpy==1.26.4
+pillow==10.2.0
+opencv-python==4.9.0.80
+
+# Explainability
+git+https://github.com/jacobgil/pytorch-grad-cam.git
+
+
+# Google Cloud + Gemini
+google-cloud-aiplatform==1.42.1
+
+# Firebase
+firebase-admin==6.4.0
+
+# Utilities
+python-dotenv==1.0.1
+requests==2.31.0
