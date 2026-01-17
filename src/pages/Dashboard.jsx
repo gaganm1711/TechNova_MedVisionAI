@@ -1,9 +1,10 @@
 import { useState } from "react";
 import PatientForm from "../components/PatientForm";
 import ImageUpload from "../components/ImageUpload";
-import HeatmapViewer from "../components/HeatMapViewer";
+import HeatmapViewer from "../components/HeatmapViewer";
 import ResultPanel from "../components/ResultPanel";
 import Disclaimer from "../components/Disclaimer";
+import Footer from "../components/Footer";
 
 export default function Dashboard() {
   const [formData, setFormData] = useState({});
@@ -13,53 +14,77 @@ export default function Dashboard() {
     setResult({
       confidence: 87,
       explanation:
-        "Grad-CAM visualization highlights regions of increased attention "
-        + "within the selected anatomical area. These patterns are visually "
-        + "significant and generated for demonstration purposes only.",
+        "Grad-CAM visualization highlights clinically relevant regions " +
+        "to support explainable medical imaging analysis.",
       xray_url: "https://via.placeholder.com/400x400.png?text=X-ray",
       heatmap_url: "https://via.placeholder.com/400x400.png?text=Heatmap",
     });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      {/* Center Card */}
-      <div className="w-full max-w-4xl bg-slate-900 rounded-2xl shadow-2xl p-6 space-y-6">
+    <div className="min-h-screen bg-[#020617] text-slate-200">
 
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white">
-            AI X-Ray Analysis System
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Explainable Medical Imaging (Demo)
-          </p>
+      {/* ================= HERO SECTION ================= */}
+      <section className="px-8 py-24 bg-gradient-to-b from-[#020617] via-[#0b1d33] to-[#020617]">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+
+          {/* LEFT CONTENT */}
+          <div className="space-y-6">
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+              
+              <span className="text-cyan-400">MedVision AI</span>
+              
+            </h1>
+
+            <p className="text-slate-300 max-w-xl">
+              MedVision AI assists Doctors and clinicians by analyzing
+              medical images using advanced computer vision, confidence-based
+              reasoning, and explainable AI — designed for real-world
+              healthcare workflows.
+            </p>
+
+            
+          </div>
+
+          
         </div>
+      </section>
 
-        {/* Input Section */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <PatientForm formData={formData} setFormData={setFormData} />
-          <ImageUpload formData={formData} setFormData={setFormData} />
+      {/* ================= DASHBOARD SECTION ================= */}
+      <section className="bg-[#020617] rounded-t-[60px] px-6 py-20 -mt-16">
+        <div className="max-w-6xl mx-auto space-y-6">
+
+          {/* INPUT CARDS */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <PatientForm formData={formData} setFormData={setFormData} />
+            <ImageUpload formData={formData} setFormData={setFormData} />
+          </div>
+
+          {/* ANALYZE BUTTON */}
+          <button
+            onClick={handleAnalyze}
+            className="w-full py-3 rounded-lg font-semibold text-white
+            bg-gradient-to-r from-sky-500 to-blue-600 hover:opacity-90 transition"
+          >
+            Run AI Analysis
+          </button>
+
+          {/* RESULTS */}
+          <div className="space-y-4">
+            <HeatmapViewer
+              xray={result?.xray_url}
+              heatmap={result?.heatmap_url}
+            />
+            <ResultPanel result={result} />
+            <Disclaimer />
+          </div>
+
         </div>
+      </section>
 
-        {/* Button */}
-        <button
-          onClick={handleAnalyze}
-          className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-lg font-semibold transition"
-        >
-          Run AI Analysis
-        </button>
-
-        {/* Output */}
-        <HeatmapViewer
-          xray={result?.xray_url}
-          heatmap={result?.heatmap_url}
-        />
-
-        <ResultPanel result={result} />
-
-        <Disclaimer />
-      </div>
+      <Footer />
     </div>
   );
 }
+
+
