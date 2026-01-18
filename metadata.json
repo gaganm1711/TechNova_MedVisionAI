@@ -1,0 +1,7 @@
+{
+  "name": "MedVision AI",
+  "description": "A hospital-grade AI Medical Imaging & Clinical Decision Support Platform for X-rays, MRIs, and CT scans.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
